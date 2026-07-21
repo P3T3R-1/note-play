@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Your Song — Noteplay</title>
+<meta name="description" content="Tell us who your song is for. Choose an occasion, style and mood, and we'll compose a custom AI-generated track delivered within 3 days.">
+<meta property="og:title" content="Order Your Custom AI Song — Noteplay">
+<meta property="og:description" content="Personalized AI-generated songs, delivered in 3 days with MP3 + WAV files.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M4 14V10M9 18V6M14 20V4M19 15V9" stroke="#0A0A14" stroke-width="2" stroke-linecap="round"/></svg></span>
+      Noteplay
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html#features">Features</a></li>
+      <li><a href="index.html#pricing">Pricing</a></li>
+      <li><a href="index.html#testimonials">Reviews</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="order.html" class="btn btn-ghost">Order Your Song</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="container">
+    <p class="eyebrow">Recording session intake</p>
+    <h1>Let's write your song</h1>
+    <p>Fill in the details below — the more specific you are, the more personal your track will be. Every order includes a 3-day delivery guarantee and one free revision.</p>
+  </div>
+</header>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="order-layout">
+
+      <form class="form-card" id="orderForm" novalidate>
+
+        <span class="form-section-title">01 — Your details</span>
+        <div class="form-grid">
+          <div class="field">
+            <label for="fullName">Full Name</label>
+            <input type="text" id="fullName" name="fullName" placeholder="e.g. Alex Rivera" required>
+          </div>
+          <div class="field">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="you@email.com" required>
+          </div>
+          <div class="field full">
+            <label for="songFor">Who is the song for?</label>
+            <input type="text" id="songFor" name="songFor" placeholder="e.g. My sister Maya, or 'Orbit Coffee Co.'" required>
+          </div>
+        </div>
+
+        <span class="form-section-title">02 — The brief</span>
+        <div class="form-grid">
+          <div class="field">
+            <label for="occasion">Occasion</label>
+            <select id="occasion" name="occasion" required>
+              <option value="" disabled selected>Select an occasion</option>
+              <option value="birthday">Birthday</option>
+              <option value="wedding">Wedding / Anniversary</option>
+              <option value="business">Business / Brand</option>
+              <option value="youtube">YouTube Video</option>
+              <option value="social">Social Media</option>
+              <option value="proposal">Proposal</option>
+              <option value="memorial">Memorial / Tribute</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="style">Music Style</label>
+            <select id="style" name="style" required>
+              <option value="" disabled selected>Select a style</option>
+              <option value="pop">Pop</option>
+              <option value="acoustic">Acoustic / Folk</option>
+              <option value="hiphop">Hip-Hop</option>
+              <option value="rnb">R&amp;B / Soul</option>
+              <option value="rock">Rock</option>
+              <option value="edm">EDM / Dance</option>
+              <option value="lofi">Lo-fi</option>
+              <option value="country">Country</option>
+              <option value="orchestral">Cinematic / Orchestral</option>
+              <option value="jazz">Jazz</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="mood">Mood</label>
+            <select id="mood" name="mood" required>
+              <option value="" disabled selected>Select a mood</option>
+              <option value="joyful">Joyful / Upbeat</option>
+              <option value="romantic">Romantic</option>
+              <option value="emotional">Emotional / Heartfelt</option>
+              <option value="epic">Epic / Uplifting</option>
+              <option value="chill">Chill / Relaxed</option>
+              <option value="funny">Funny / Playful</option>
+              <option value="nostalgic">Nostalgic</option>
+              <option value="energetic">Energetic / Hype</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="length">Length Preference</label>
+            <select id="length" name="length" required>
+              <option value="" disabled selected>Select a length</option>
+              <option value="short" data-secs="60">Short (30–60 sec)</option>
+              <option value="standard" data-secs="150">Standard (2–3 min)</option>
+              <option value="full" data-secs="240">Full length (3–4 min)</option>
+            </select>
+          </div>
+        </div>
+
+        <span class="form-section-title">03 — Lyrics &amp; personal details</span>
+        <div class="field full">
+          <label for="lyrics">Lyrics / Key Lines <span class="hint">(optional — leave blank and we'll write from your brief)</span></label>
+          <textarea id="lyrics" name="lyrics" placeholder="Any lines, phrases or lyrics you'd like included..."></textarea>
+        </div>
+        <div class="field full">
+          <label for="details">Special Names or Details</label>
+          <textarea id="details" name="details" placeholder="Names, dates, inside jokes, shared memories, pets, places..."></textarea>
+        </div>
+
+        <span class="form-section-title">04 — Reference &amp; usage</span>
+        <div class="field full">
+          <label for="refAudio">Upload Reference Audio <span class="hint">(optional — helps us match style or tempo)</span></label>
+          <label class="file-drop" id="fileDropLabel" for="refAudio">
+            <span id="fileDropText">Click to upload or drag an MP3 / WAV here (max 20MB)</span>
+          </label>
+          <input type="file" id="refAudio" name="refAudio" accept="audio/*" class="hidden">
+        </div>
+
+        <div class="checkbox-row">
+          <input type="checkbox" id="commercialUse" name="commercialUse">
+          <label for="commercialUse">This song will be used commercially (monetized YouTube, ads, business use). Requires the Commercial License plan — pricing will update automatically.</label>
+        </div>
+
+        <span class="form-section-title">05 — Choose your plan</span>
+        <div class="form-grid">
+          <div class="field full">
+            <label for="plan">Plan</label>
+            <select id="plan" name="plan" required>
+              <option value="basic" data-price="9.99">Basic — $9.99 (up to 4 min, personal use)</option>
+              <option value="premium" data-price="14.99">Premium — $14.99 (up to 4 min, personal use)</option>
+              <option value="commercial" data-price="24.99">Commercial License — $24.99 (up to 4 min, commercial rights)</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="orderSubmit">Continue to Checkout →</button>
+        <p class="summary-note text-center" style="margin-top:14px;">You won't be charged yet. Review your order on the next step.</p>
+      </form>
+
+      <aside class="summary-card">
+        <h3>Order Summary</h3>
+        <div class="summary-row"><span>Plan</span><span id="sumPlan">Basic</span></div>
+        <div class="summary-row"><span>Length</span><span id="sumLength">—</span></div>
+        <div class="summary-row"><span>Occasion</span><span id="sumOccasion">—</span></div>
+        <div class="summary-row"><span>Commercial use</span><span id="sumCommercial">No</span></div>
+        <div class="summary-row"><span>Revisions included</span><span id="sumRevisions">1</span></div>
+        <div class="summary-total"><span>Total</span><span id="sumTotal">$9.99</span></div>
+        <p class="summary-note">Delivery guaranteed within 3 days · MP3 + WAV included · Free revision included on every plan.</p>
+      </aside>
+
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 Noteplay. All rights reserved.</span>
+      <span><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a> · <a href="contact.html">Contact</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/order.js"></script>
+</body>
+</html>

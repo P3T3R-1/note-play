@@ -1,0 +1,25 @@
+{
+  "name": "noteplay-backend",
+  "version": "1.0.0",
+  "description": "Example Node/Express backend for Noteplay — order intake, Stripe & PayPal payments, email confirmation.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "multer": "^1.4.5-lts.1",
+    "sqlite3": "^5.1.7",
+    "stripe": "^16.2.0",
+    "@paypal/checkout-server-sdk": "^1.0.3",
+    "nodemailer": "^6.9.14",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
