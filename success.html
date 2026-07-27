@@ -53,13 +53,52 @@
 <script src="js/main.js"></script>
 <script src="js/config.js"></script>
 <script>
-  const order = JSON.parse(sessionStorage.getItem('noteplay_order') || 'null');
-  if (order) {
-    document.getElementById('orderIdLine').textContent = 'Order #' + (order.orderId || 'NOTE-000000');
-    document.getElementById('successDetail').textContent =
-      `Thanks ${order.fullName || ''} — we've received your ${order.planLabel || ''} order for "${order.songFor || 'your recipient'}" and payment via ${order.paymentMethod === 'paypal' ? 'PayPal' : 'card'}. A confirmation has been sent to ${order.email || 'your email'}.`;
-    sessionStorage.removeItem('noteplay_order');
-  }
+  (async () => {
+    const order = JSON.parse(sessionStorage.getItem('noteplay_order') || 'null');
+    const params = new URLSearchParams(window.location.search);
+
+    const orderIdLine = document.getElementById('orderIdLine');
+    const successDetail = document.getElementById('successDetail');
+
+    const paypalToken = params.get('token');
+    const localOrderId = sessionStorage.getItem('noteplay_paypal_order_id');
+
+    if (paypalToken && localOrderId) {
+      successDetail.textContent = 'Confirming your PayPal payment…';
+      try {
+        const res = await fetch(`${API_BASE}/api/paypal/capture-order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paypalOrderId: paypalToken, orderId: localOrderId })
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'We could not confirm your PayPal payment.');
+        }
+
+        orderIdLine.textContent = 'Order #' + data.orderId;
+        successDetail.textContent =
+          `Thanks${order && order.fullName ? ' ' + order.fullName : ''} — your PayPal payment was confirmed and your song is now in production. A confirmation has been sent to your email.`;
+      } catch (err) {
+        successDetail.textContent = err.message || 'Something went wrong confirming payment. Contact support with your order details.';
+      } finally {
+        sessionStorage.removeItem('noteplay_paypal_order_id');
+        sessionStorage.removeItem('noteplay_order');
+      }
+      return;
+    }
+
+    const stripeOrderId = params.get('order');
+    if (order) {
+      orderIdLine.textContent = 'Order #' + (stripeOrderId || order.orderId || 'NOTE-000000');
+      successDetail.textContent =
+        `Thanks ${order.fullName || ''} — we've received your ${order.planLabel || ''} order for "${order.songFor || 'your recipient'}" and your payment via card. A confirmation has been sent to ${order.email || 'your email'}.`;
+      sessionStorage.removeItem('noteplay_order');
+    } else if (stripeOrderId) {
+      orderIdLine.textContent = 'Order #' + stripeOrderId;
+    }
+  })();
 </script>
 </body>
 </html>
