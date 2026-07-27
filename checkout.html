@@ -51,35 +51,14 @@
 
         <!-- Stripe panel -->
         <div class="pay-panel active" id="panel-stripe">
-          <form id="stripeForm">
-            <div class="field full">
-              <label for="cardName">Name on Card</label>
-              <input type="text" id="cardName" placeholder="Alex Rivera" required>
-            </div>
-            <div class="field full">
-              <label for="cardNumber">Card Number</label>
-              <!-- In production this is replaced by Stripe Elements (stripe.js), never a raw input -->
-              <div class="stripe-el" id="card-element">4242 4242 4242 4242</div>
-            </div>
-            <div class="card-row">
-              <div class="field">
-                <label for="cardExp">Expiry</label>
-                <input type="text" id="cardExp" placeholder="MM / YY" value="12 / 29" required>
-              </div>
-              <div class="field">
-                <label for="cardCvc">CVC</label>
-                <input type="text" id="cardCvc" placeholder="123" value="123" required>
-              </div>
-            </div>
-            <p class="summary-note" style="margin-bottom:18px;">Test mode — this uses Stripe's publishable test key and the Stripe.js Elements integration. No real charge is made.</p>
-            <button type="submit" class="btn btn-primary btn-block" id="stripePayBtn">Pay <span id="stripeAmount">$9.99</span></button>
-          </form>
+          <p style="margin-bottom:20px;">You'll be redirected to Stripe's secure checkout page to enter your card details, then returned here automatically once payment completes.</p>
+          <button type="button" class="btn btn-primary btn-block" id="stripePayBtn">Continue to Stripe — <span id="stripeAmount">$9.99</span></button>
+          <p class="summary-note" style="margin-top:14px;">Test mode uses Stripe's test card <strong>4242 4242 4242 4242</strong>, any future expiry, any CVC.</p>
         </div>
 
         <!-- PayPal panel -->
         <div class="pay-panel" id="panel-paypal">
           <p style="margin-bottom:20px;">You'll be redirected to PayPal to confirm payment, then returned here automatically.</p>
-          <!-- In production, the PayPal JS SDK renders real buttons into #paypal-button-container -->
           <div id="paypal-button-container">
             <button type="button" class="paypal-btn" id="paypalPayBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 4h7c3 0 5 2 4.4 5.2-.6 3.4-3 5.3-6.6 5.3H9.3L8 20H4L7 4z" fill="#003087"/></svg>
