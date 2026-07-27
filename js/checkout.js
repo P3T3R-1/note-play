@@ -1,12 +1,10 @@
-/* Checkout page — tab switching, order summary, mock payment handoff
-   In production, replace the fetch() calls below with real requests to
-   your backend (see /backend/routes/stripe.js and /backend/routes/paypal.js). */
+/* Checkout page — tab switching, order summary, real Stripe/PayPal handoff.
+   Requires js/config.js to be loaded first (defines API_BASE). */
 
 document.addEventListener('DOMContentLoaded', () => {
   const order = JSON.parse(sessionStorage.getItem('noteplay_order') || 'null');
 
-  if (!order) {
-    // No order in session — send the customer back to build one.
+  if (!order || !order.orderId) {
     window.location.href = 'order.html';
     return;
   }
@@ -23,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('stripeAmount').textContent = money(order.price);
   document.getElementById('paypalAmount').textContent = money(order.price);
 
-  /* ---- Tabs ---- */
   const tabs = document.querySelectorAll('.pay-tab');
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
@@ -34,56 +31,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  /* ---- Stripe (mock) ----
-     Production flow:
-       1. POST order to /api/create-checkout-session
-       2. Backend creates a Stripe Checkout Session and returns its id/url
-       3. Redirect the browser to the Stripe-hosted checkout page          */
-  const stripeForm = document.getElementById('stripeForm');
-  stripeForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  document.getElementById('stripePayBtn').addEventListener('click', async () => {
     const btn = document.getElementById('stripePayBtn');
     btn.disabled = true;
-    btn.textContent = 'Processing…';
+    btn.textContent = 'Redirecting to Stripe…';
 
     try {
-      // const res = await fetch('/api/create-checkout-session', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(order)
-      // });
-      // const { url } = await res.json();
-      // window.location.href = url; // redirect to Stripe-hosted checkout
+      const res = await fetch(`${API_BASE}/api/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.orderId })
+      });
+      const data = await res.json();
 
-      await mockDelay(1200);
-      order.paymentMethod = 'stripe';
-      order.orderId = generateOrderId();
-      sessionStorage.setItem('noteplay_order', JSON.stringify(order));
-      window.location.href = 'success.html';
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || 'Could not start Stripe checkout.');
+      }
+
+      window.location.href = data.url;
     } catch (err) {
-      alert('Payment failed. Please try again.');
+      alert(err.message || 'Payment failed to start. Please try again.');
       btn.disabled = false;
-      btn.textContent = 'Pay ' + money(order.price);
+      btn.textContent = 'Continue to Stripe — ' + money(order.price);
     }
   });
 
-  /* ---- PayPal (mock) ----
-     Production flow uses the PayPal JS SDK to render real buttons and
-     calls /api/paypal/create-order then /api/paypal/capture-order.      */
   document.getElementById('paypalPayBtn').addEventListener('click', async () => {
     const btn = document.getElementById('paypalPayBtn');
     btn.disabled = true;
     btn.textContent = 'Redirecting to PayPal…';
 
-    await mockDelay(1200);
-    order.paymentMethod = 'paypal';
-    order.orderId = generateOrderId();
-    sessionStorage.setItem('noteplay_order', JSON.stringify(order));
-    window.location.href = 'success.html';
-  });
+    try {
+      const res = await fetch(`${API_BASE}/api/paypal/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.orderId })
+      });
+      const data = await res.json();
 
-  function mockDelay(ms) { return new Promise(res => setTimeout(res, ms)); }
-  function generateOrderId() {
-    return 'NOTE-' + Math.random().toString(36).slice(2, 8).toUpperCase();
-  }
+      if (!res.ok || !data.approveUrl) {
+        throw new Error(data.error || 'Could not start PayPal checkout.');
+      }
+
+      sessionStorage.setItem('noteplay_paypal_order_id', order.orderId);
+      window.location.href = data.approveUrl;
+    } catch (err) {
+      alert(err.message || 'Payment failed to start. Please try again.');
+      btn.disabled = false;
+      btn.textContent = 'Pay with PayPal — ' + money(order.price);
+    }
+  });
 });
