@@ -10,7 +10,7 @@
 const express = require('express');
 const paypal = require('@paypal/checkout-server-sdk');
 const db = require('../db/database');
-const { sendOrderConfirmation } = require('../email/sendEmail');
+const { sendOrderConfirmation, sendAdminNotification } = require('../email/sendEmail');
 
 const router = express.Router();
 
@@ -73,11 +73,17 @@ router.post('/capture-order', async (req, res) => {
 
     await db.markOrderPaid(orderId, 'paypal', capture.result.id);
     const order = await db.getOrder(orderId);
-    await sendOrderConfirmation({
+    const orderForEmail = {
       id: order.id, fullName: order.full_name, email: order.email,
       songFor: order.song_for, plan: order.plan, style: order.style,
-      mood: order.mood, price: order.price
-    });
+      mood: order.mood, price: order.price, occasion: order.occasion,
+      length: order.length, lyrics: order.lyrics, details: order.details,
+      commercialUse: !!order.commercial_use,
+      referenceFilePath: order.reference_file_path,
+      paymentMethod: order.payment_method, paymentReference: order.payment_reference
+    };
+    await sendOrderConfirmation(orderForEmail);
+    await sendAdminNotification(orderForEmail);
 
     res.json({ success: true, orderId: order.id });
   } catch (err) {
