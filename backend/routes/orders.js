@@ -9,6 +9,7 @@
 
 const express = require('express');
 const multer = require('multer');
+const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const db = require('../db/database');
@@ -17,17 +18,35 @@ const router = express.Router();
 
 const PLAN_PRICES = { basic: 9.99, premium: 14.99, commercial: 24.99 };
 
+const orderLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many orders submitted from this device. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+function requireAdminKey(req, res, next) {
+  const key = req.headers['x-admin-key'];
+  if (!process.env.ADMIN_API_KEY) {
+    return res.status(500).json({ error: 'Admin access is not configured on this server.' });
+  }
+  if (key !== process.env.ADMIN_API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized.' });
+  }
+  next();
+}
+
 const upload = multer({
   dest: path.join(__dirname, '..', 'uploads'),
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('audio/')) cb(null, true);
     else cb(new Error('Only audio files are allowed for the reference upload.'));
   }
 });
 
-// POST /api/orders  — create a new order (multipart/form-data)
-router.post('/', upload.single('refAudio'), async (req, res) => {
+router.post('/', orderLimiter, upload.single('refAudio'), async (req, res) => {
   try {
     const body = req.body;
     const required = ['fullName', 'email', 'songFor', 'occasion', 'style', 'mood', 'length', 'plan'];
@@ -41,7 +60,6 @@ router.post('/', upload.single('refAudio'), async (req, res) => {
     if (!PLAN_PRICES[plan]) {
       return res.status(400).json({ error: 'Invalid plan selected.' });
     }
-    // Commercial-use orders must use the commercial plan / price
     const commercialUse = body.commercialUse === 'true' || body.commercialUse === true;
     if (commercialUse && plan !== 'commercial') {
       return res.status(400).json({ error: 'Commercial use requires the Commercial License plan.' });
@@ -72,8 +90,7 @@ router.post('/', upload.single('refAudio'), async (req, res) => {
   }
 });
 
-// GET /api/orders/:id — fetch a single order (used by admin/support tools)
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAdminKey, async (req, res) => {
   try {
     const order = await db.getOrder(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found.' });
@@ -83,8 +100,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// GET /api/orders — list all orders (admin dashboard use)
-router.get('/', async (req, res) => {
+router.get('/', requireAdminKey, async (req, res) => {
   try {
     const orders = await db.listOrders();
     res.json(orders);
