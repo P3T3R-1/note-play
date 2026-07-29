@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Noteplay</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* Admin-only additions, kept local to this page */
+  .admin-wrap{ max-width:1100px; margin:0 auto; padding:150px 24px 100px; }
+  .gate{ max-width:420px; margin:120px auto; text-align:center; }
+  .gate .field{ text-align:left; }
+  .admin-topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; gap:16px; flex-wrap:wrap; }
+  .admin-topbar h1{ margin:0; font-size:1.6rem; }
+  .order-table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius-m); background:var(--bg-alt); }
+  table.orders{ width:100%; border-collapse:collapse; font-size:.86rem; min-width:900px; }
+  table.orders th{ text-align:left; padding:14px 16px; color:var(--muted-dim); font-family:'JetBrains Mono',monospace; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; border-bottom:1px solid var(--line); white-space:nowrap; }
+  table.orders td{ padding:14px 16px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top; }
+  table.orders tr:last-child td{ border-bottom:none; }
+  table.orders tr.order-row{ cursor:pointer; transition:background .2s; }
+  table.orders tr.order-row:hover{ background:rgba(124,92,255,.06); }
+  .badge{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:.72rem; font-family:'JetBrains Mono',monospace; }
+  .badge-paid{ background:rgba(34,211,238,.15); color:var(--cyan); }
+  .badge-pending{ background:rgba(155,152,176,.15); color:var(--muted); }
+  .detail-row td{ background:var(--bg); padding:0; }
+  .detail-inner{ padding:22px 26px; display:none; }
+  .detail-inner.open{ display:block; }
+  .detail-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:16px; }
+  .detail-block h4{ font-family:'JetBrains Mono',monospace; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--cyan); margin:0 0 6px; }
+  .detail-block p{ margin:0; font-size:.9rem; color:var(--ink); white-space:pre-wrap; }
+  .search-row{ display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+  .search-row input{ flex:1; min-width:220px; }
+  .admin-note{ font-size:.8rem; color:var(--muted-dim); margin-top:14px; }
+  .empty-state{ text-align:center; padding:60px 20px; color:var(--muted); }
+  .error-banner{ background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#FCA5A5; padding:14px 18px; border-radius:var(--radius-s); margin-bottom:20px; font-size:.88rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M4 14V10M9 18V6M14 20V4M19 15V9" stroke="#0A0A14" stroke-width="2" stroke-linecap="round"/></svg></span>
+      Noteplay <span class="mono" style="color:var(--muted-dim); font-size:.7rem; margin-left:6px;">/admin</span>
+    </a>
+    <div class="nav-cta">
+      <button class="btn btn-ghost" id="logoutBtn" style="display:none;">Log out</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Key entry gate -->
+<div class="admin-wrap gate" id="gateView">
+  <p class="eyebrow" style="justify-content:center;">Restricted</p>
+  <h1>Admin access</h1>
+  <p>Enter your admin key to view orders. This is the same value set as <code>ADMIN_API_KEY</code> on the backend.</p>
+  <form id="gateForm" style="margin-top:24px;">
+    <div class="field">
+      <label for="adminKeyInput">Admin key</label>
+      <input type="password" id="adminKeyInput" placeholder="••••••••••••••••" autocomplete="off" required>
+    </div>
+    <div id="gateError" class="error-banner" style="display:none;"></div>
+    <button type="submit" class="btn btn-primary btn-block">Unlock</button>
+  </form>
+</div>
+
+<!-- Orders dashboard -->
+<div class="admin-wrap" id="dashboardView" style="display:none;">
+  <div class="admin-topbar">
+    <h1>Orders</h1>
+    <div class="search-row" style="margin:0; flex:1; max-width:420px;">
+      <input type="text" id="searchInput" placeholder="Search by name, email, order ID, or song for…">
+    </div>
+  </div>
+
+  <div id="dashError" class="error-banner" style="display:none;"></div>
+
+  <div class="order-table-wrap">
+    <table class="orders" id="ordersTable">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Date</th>
+          <th>Customer</th>
+          <th>Song For</th>
+          <th>Plan</th>
+          <th>Price</th>
+          <th>Status</th>
+          <th>Payment</th>
+        </tr>
+      </thead>
+      <tbody id="ordersBody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyState" style="display:none;">No orders yet.</div>
+  </div>
+
+  <p class="admin-note">Click any row to see the full creative brief (lyrics, special details, reference file). Data refreshes on page load — reload to see new orders.</p>
+</div>
+
+<script src="js/config.js"></script>
+<script>
+(() => {
+  const KEY_STORAGE = 'noteplay_admin_key';
+  const gateView = document.getElementById('gateView');
+  const dashboardView = document.getElementById('dashboardView');
+  const gateForm = document.getElementById('gateForm');
+  const gateError = document.getElementById('gateError');
+  const dashError = document.getElementById('dashError');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const ordersBody = document.getElementById('ordersBody');
+  const emptyState = document.getElementById('emptyState');
+  const searchInput = document.getElementById('searchInput');
+
+  let allOrders = [];
+
+  function showGate(message) {
+    dashboardView.style.display = 'none';
+    gateView.style.display = 'block';
+    logoutBtn.style.display = 'none';
+    if (message) {
+      gateError.textContent = message;
+      gateError.style.display = 'block';
+    } else {
+      gateError.style.display = 'none';
+    }
+  }
+
+  function showDashboard() {
+    gateView.style.display = 'none';
+    dashboardView.style.display = 'block';
+    logoutBtn.style.display = 'inline-flex';
+  }
+
+  function money(n) { return '$' + Number(n).toFixed(2); }
+
+  function formatDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) +
+      ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+  }
+
+  function renderOrders(orders) {
+    ordersBody.innerHTML = '';
+    emptyState.style.display = orders.length ? 'none' : 'block';
+
+    orders.forEach(order => {
+      const row = document.createElement('tr');
+      row.className = 'order-row';
+      row.innerHTML = `
+        <td class="mono">${escapeHtml(order.id)}</td>
+        <td>${formatDate(order.created_at)}</td>
+        <td>${escapeHtml(order.full_name)}<br><span style="color:var(--muted-dim);font-size:.8rem;">${escapeHtml(order.email)}</span></td>
+        <td>${escapeHtml(order.song_for)}</td>
+        <td>${escapeHtml(order.plan)}</td>
+        <td>${money(order.price)}</td>
+        <td><span class="badge ${order.payment_status === 'paid' ? 'badge-paid' : 'badge-pending'}">${escapeHtml(order.status || order.payment_status)}</span></td>
+        <td>${escapeHtml(order.payment_method || '—')}</td>
+      `;
+
+      const detailRow = document.createElement('tr');
+      detailRow.className = 'detail-row';
+      const td = document.createElement('td');
+      td.colSpan = 8;
+      td.innerHTML = `
+        <div class="detail-inner">
+          <div class="detail-grid">
+            <div class="detail-block"><h4>Occasion</h4><p>${escapeHtml(order.occasion || '—')}</p></div>
+            <div class="detail-block"><h4>Style / Mood</h4><p>${escapeHtml(order.style)} / ${escapeHtml(order.mood)}</p></div>
+            <div class="detail-block"><h4>Length</h4><p>${escapeHtml(order.length || '—')}</p></div>
+            <div class="detail-block"><h4>Commercial use</h4><p>${order.commercial_use ? 'Yes' : 'No'}</p></div>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block"><h4>Lyrics / key lines</h4><p>${escapeHtml(order.lyrics) || '(none provided)'}</p></div>
+            <div class="detail-block"><h4>Special names / details</h4><p>${escapeHtml(order.details) || '(none provided)'}</p></div>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block"><h4>Reference audio</h4><p>${order.reference_file_path ? 'Uploaded (see server /backend/uploads)' : 'None uploaded'}</p></div>
+            <div class="detail-block"><h4>Payment reference</h4><p class="mono" style="font-size:.8rem;">${escapeHtml(order.payment_reference) || '—'}</p></div>
+          </div>
+        </div>
+      `;
+      detailRow.appendChild(td);
+
+      row.addEventListener('click', () => {
+        const inner = detailRow.querySelector('.detail-inner');
+        inner.classList.toggle('open');
+      });
+
+      ordersBody.appendChild(row);
+      ordersBody.appendChild(detailRow);
+    });
+  }
+
+  function applySearch() {
+    const q = searchInput.value.trim().toLowerCase();
+    if (!q) { renderOrders(allOrders); return; }
+    const filtered = allOrders.filter(o =>
+      [o.id, o.full_name, o.email, o.song_for].some(field =>
+        field && String(field).toLowerCase().includes(q)
+      )
+    );
+    renderOrders(filtered);
+  }
+
+  async function loadOrders(key) {
+    dashError.style.display = 'none';
+    try {
+      const res = await fetch(`${API_BASE}/api/orders`, {
+        headers: { 'x-admin-key': key }
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem(KEY_STORAGE);
+        showGate('That key was rejected. Please re-enter it.');
+        return;
+      }
+      if (!res.ok) {
+        throw new Error('Server returned an error loading orders.');
+      }
+
+      allOrders = await res.json();
+      showDashboard();
+      renderOrders(allOrders);
+    } catch (err) {
+      dashError.textContent = err.message || 'Could not load orders. Check your connection and try again.';
+      dashError.style.display = 'block';
+      showDashboard();
+    }
+  }
+
+  gateForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const key = document.getElementById('adminKeyInput').value.trim();
+    if (!key) return;
+    localStorage.setItem(KEY_STORAGE, key);
+    loadOrders(key);
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem(KEY_STORAGE);
+    showGate();
+  });
+
+  searchInput.addEventListener('input', applySearch);
+
+  // On load: if a key is already stored, skip straight to the dashboard.
+  const storedKey = localStorage.getItem(KEY_STORAGE);
+  if (storedKey) {
+    loadOrders(storedKey);
+  } else {
+    showGate();
+  }
+})();
+</script>
+</body>
+</html>
