@@ -64,21 +64,21 @@ router.post('/', orderLimiter, upload.single('refAudio'), async (req, res) => {
       return res.status(400).json({ error: 'Commercial use requires the Commercial License plan.' });
     }
     const order = {
-      id: 'NOTE-' + uuidv4().split('-')[0].toUpperCase(),
-      fullName: body.fullName,
-      email: body.email,
-      songFor: body.songFor,
-      occasion: body.occasion,
-      style: body.style,
-      mood: body.mood,
-      length: body.length,
-      lyrics: typeof body.lyrics === 'string' ? body.lyrics : '',
-      details: typeof body.details === 'string' ? body.details : '',
-      commercialUse,
-      plan,
-      price: PLAN_PRICES[plan],
-      referenceFilePath: req.file ? req.file.path : null
-    };
+  id: 'NOTE-' + uuidv4().split('-')[0].toUpperCase(),
+  fullName: typeof body.fullName === 'string' ? body.fullName : '',
+  email: typeof body.email === 'string' ? body.email : '',
+  songFor: typeof body.songFor === 'string' ? body.songFor : '',
+  occasion: typeof body.occasion === 'string' ? body.occasion : '',
+  style: typeof body.style === 'string' ? body.style : '',
+  mood: typeof body.mood === 'string' ? body.mood : '',
+  length: typeof body.length === 'string' ? body.length : '',
+  lyrics: typeof body.lyrics === 'string' ? body.lyrics : '',
+  details: typeof body.details === 'string' ? body.details : '',
+  commercialUse,
+  plan,
+  price: PLAN_PRICES[plan],
+  referenceFilePath: req.file ? req.file.path : null
+};
     await db.createOrder(order);
     res.status(201).json({ orderId: order.id, price: order.price });
   } catch (err) {
