@@ -48,14 +48,21 @@ const upload = multer({
 
 router.post('/', orderLimiter, upload.single('refAudio'), async (req, res) => {
   try {
-    const body = req.body;
+    const body = req.body || {};
+    const textFields = ['fullName', 'email', 'songFor', 'occasion', 'style', 'mood', 'length', 'plan', 'lyrics', 'details'];
+    const normalizedBody = {};
+    for (const field of textFields) {
+      normalizedBody[field] = typeof body[field] === 'string' ? body[field] : '';
+    }
+
     const required = ['fullName', 'email', 'songFor', 'occasion', 'style', 'mood', 'length', 'plan'];
     for (const field of required) {
-      if (typeof body[field] !== 'string' || !body[field].trim()) {
+      if (!normalizedBody[field].trim()) {
         return res.status(400).json({ error: `Missing required field: ${field}` });
       }
     }
-    const plan = body.plan;
+
+    const plan = normalizedBody.plan;
     if (!PLAN_PRICES[plan]) {
       return res.status(400).json({ error: 'Invalid plan selected.' });
     }
@@ -65,15 +72,15 @@ router.post('/', orderLimiter, upload.single('refAudio'), async (req, res) => {
     }
     const order = {
   id: 'NOTE-' + uuidv4().split('-')[0].toUpperCase(),
-  fullName: typeof body.fullName === 'string' ? body.fullName : '',
-  email: typeof body.email === 'string' ? body.email : '',
-  songFor: typeof body.songFor === 'string' ? body.songFor : '',
-  occasion: typeof body.occasion === 'string' ? body.occasion : '',
-  style: typeof body.style === 'string' ? body.style : '',
-  mood: typeof body.mood === 'string' ? body.mood : '',
-  length: typeof body.length === 'string' ? body.length : '',
-  lyrics: typeof body.lyrics === 'string' ? body.lyrics : '',
-  details: typeof body.details === 'string' ? body.details : '',
+  fullName: normalizedBody.fullName,
+  email: normalizedBody.email,
+  songFor: normalizedBody.songFor,
+  occasion: normalizedBody.occasion,
+  style: normalizedBody.style,
+  mood: normalizedBody.mood,
+  length: normalizedBody.length,
+  lyrics: normalizedBody.lyrics,
+  details: normalizedBody.details,
   commercialUse,
   plan,
   price: PLAN_PRICES[plan],
